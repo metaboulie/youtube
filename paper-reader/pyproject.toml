@@ -1,0 +1,15 @@
+[project]
+name = "paper-reader"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "docling>=1.20.0",
+    "ell-ai>=0.0.13",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.6.9",
+]
