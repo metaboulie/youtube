@@ -20,7 +20,9 @@ ell.config.register_model(MODEL, client)
 
 # initialized with a paper, user can chat with it about the paper
 @ell.complex(model=MODEL, client=client, temperature=0.1)
-def academic_chat_bot(message_history: list[Message], markdown_content: str) -> list[Message]:
+def academic_chat_bot(
+    message_history: list[Message], markdown_content: str
+) -> list[Message]:
     """
     You are a highly specialized assistant trained to help users quickly and efficiently comprehend academic papers. Your primary function is to:
 
@@ -105,8 +107,12 @@ def read_markdown_file(file_path: str) -> str:
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some files.")
-    parser.add_argument("input_file", type=str, help="Path to the input markdown file.")
-    parser.add_argument("output_file", type=str, help="Path to the output markdown file.")
+    parser.add_argument(
+        "input_file", type=str, help="Path to the input markdown file."
+    )
+    parser.add_argument(
+        "output_file", type=str, help="Path to the output markdown file."
+    )
     return parser.parse_args()
 
 
@@ -115,7 +121,9 @@ if __name__ == "__main__":
     input_file = args.input_file
     output_file = args.output_file
     paper_content = read_markdown_file(input_file)
-    original_content = read_markdown_file(output_file) if os.path.exists(output_file) else ""
+    original_content = (
+        read_markdown_file(output_file) if os.path.exists(output_file) else ""
+    )
 
     message_history = []
 
@@ -143,4 +151,3 @@ if __name__ == "__main__":
         print("Conversation saved to", output_file)
 
     print("Exiting...")
-
