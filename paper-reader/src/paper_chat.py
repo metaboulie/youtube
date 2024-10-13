@@ -107,9 +107,7 @@ def read_markdown_file(file_path: str) -> str:
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some files.")
-    parser.add_argument(
-        "input_file", type=str, help="Path to the input markdown file."
-    )
+    parser.add_argument("input_file", type=str, help="Path to the input markdown file.")
     parser.add_argument(
         "output_file", type=str, help="Path to the output markdown file."
     )
