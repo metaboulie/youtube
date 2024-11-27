@@ -9,7 +9,8 @@ from rich import print as rprint
 from rich.markdown import Markdown
 from rich.panel import Panel
 
-MODEL = "llama3.2"
+# MODEL = "llama3.2"
+MODEL = "llama3.2:1b"
 
 client = OpenAI(
     base_url="http://localhost:11434/v1",
@@ -19,8 +20,6 @@ client = OpenAI(
 # ell.config.verbose = True
 
 ell.config.register_model(MODEL, client)
-
-# ell.init(store="./logdir", autocommit=True, verbose=True)
 
 
 # initialized with a paper, user can chat with it about the paper
@@ -49,21 +48,7 @@ def academic_chat_bot(
     """
     # Combine the paper content with the conversation history
     last_message = message_history[-1].text if message_history else ""
-    prompt = f"Paper content:\n{markdown_content}\n\nQuestion: {last_message}"
-
-    # Create a new message with the paper content and question
-    message = ell.user(prompt)
-
-    # Get response using the academic chat system prompt
-    response = ell.chat(
-        messages=[message],
-        system=__doc__,  # Use the function's docstring as the system prompt
-        model=MODEL,
-        client=client,
-        temperature=0.1,
-    )
-
-    return [response]
+    return f"Paper content:\n{markdown_content}\n\nQuestion: {last_message}"
 
 
 @ell.complex(model=MODEL, client=client, temperature=0.1)
@@ -98,29 +83,7 @@ def organize_conversation_bot(
        - Keep any critical information from the original markdown notes intact unless the conversation history provides a better, more updated version.
        - Cross-reference new additions with existing content to avoid duplication and ensure consistency.
     """
-    # Prepare the conversation history and original content
-    conversation = "\n\n".join(
-        [
-            f"{'User' if i%2==0 else 'Assistant'}: {msg.text}"
-            for i, msg in enumerate(message_history)
-        ]
-    )
-
-    prompt = f"Original notes:\n{original_content}\n\nConversation history:\n{conversation}"
-
-    # Create a new message with the content to organize
-    message = ell.user(prompt)
-
-    # Get response using the organizer system prompt
-    response = ell.chat(
-        messages=[message],
-        system=__doc__,  # Use the function's docstring as the system prompt
-        model=MODEL,
-        client=client,
-        temperature=0.1,
-    )
-
-    return [response]
+    return f"Original notes:\n{original_content}\n\nConversation history:\n{message_history}"
 
 
 def read_markdown_file(file_path: str) -> str:
@@ -132,15 +95,17 @@ def read_markdown_file(file_path: str) -> str:
 
     Returns:
         str: The content of the markdown file.
+
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as file:
-            content = file.read()
-        return content
+        with open(file_path, encoding="utf-8") as file:
+            return file.read()
     except FileNotFoundError:
-        raise FileNotFoundError(f"The file at {file_path} does not exist.")
+        msg = f"The file at {file_path} does not exist."
+        raise FileNotFoundError(msg)
     except Exception as e:
-        raise Exception(f"An error occurred while reading the file: {e}")
+        msg = f"An error occurred while reading the file: {e}"
+        raise Exception(msg)
 
 
 def parse_args():
@@ -154,35 +119,6 @@ def parse_args():
     return parser.parse_args()
 
 
-# Add a new function to preprocess and enhance the paper content
-def enhance_paper_content(markdown_content: str) -> str:
-    """
-    Preprocesses the paper content to make it more structured and readable.
-    - Extracts and highlights key terms
-    - Adds section navigation markers
-    - Creates a table of contents
-    """
-    # Add section markers for easier navigation
-    sections = [
-        "Abstract",
-        "Introduction",
-        "Methods",
-        "Results",
-        "Discussion",
-        "Conclusion",
-    ]
-    enhanced_content = markdown_content
-
-    # Add table of contents
-    toc = "## Table of Contents\n\n"
-    for section in sections:
-        if section.lower() in markdown_content.lower():
-            toc += f"- [{section}](#{section.lower()})\n"
-
-    enhanced_content = toc + "\n---\n\n" + enhanced_content
-    return enhanced_content
-
-
 # Add different conversation modes for specific purposes
 @ell.complex(model=MODEL, client=client, temperature=0.1)
 def paper_chat_mode(
@@ -194,8 +130,28 @@ def paper_chat_mode(
     - 'deep': Detailed analysis and explanations
     - 'critique': Critical analysis and limitations
     - 'connect': Find connections to other papers/concepts
-    - 'explain': Explain complex concepts in simple terms
+    - 'explain': Explain complex concepts in simple terms.
     """
+    system_prompt = """
+    You are a highly specialized assistant trained to help users quickly and efficiently comprehend academic papers. Your primary function is to:
+
+    1. **Extract Key Information**: Provide summaries, key findings, and critical insights from academic papers, including abstracts, introductions, conclusions, and important figures or formulas.
+
+    2. **Clarify Terminology**: Define complex or unfamiliar terms in simple and concise language, with appropriate contextual understanding from the field of study.
+
+    3. **Explain Concepts**: Offer clear and detailed explanations of complex concepts, methodologies, and theoretical frameworks found in the academic text.
+
+    4. **Identify Citations**: Highlight important references and citations that are crucial for understanding the background or context of the paper.
+
+    5. **Answer Questions**: Respond to user queries about the paper, providing precise and accurate information from the text.
+
+    6. **Make Connections**: Help users connect ideas from one paper to broader research trends or other relevant works in the field.
+
+    7. **Stay Focused on Content**: Stick to the content of the paper and assist the user with academic understanding. Do not provide unrelated information unless asked directly.
+
+    You will receive academic papers in markdown format and must respond accordingly to help the user comprehend the material as efficiently as possible.
+    """
+
     mode_prompts = {
         "summary": """You are a research assistant helping to summarize academic papers.
                      Provide a concise summary focusing on:
@@ -233,28 +189,19 @@ def paper_chat_mode(
                      Make the content accessible while maintaining accuracy.""",
     }
 
-    system_prompt = mode_prompts.get(mode, mode_prompts["summary"])
+    system_prompt += mode_prompts.get(mode, mode_prompts["summary"])
 
     # Combine the last message with mode-specific context
     last_message = message_history[-1].text if message_history else ""
     prompt = f"Mode: {mode}\n\nPaper content:\n{markdown_content}\n\nQuestion: {last_message}"
 
-    # Create a new message with the enhanced prompt
-    message = ell.user(prompt)
-
-    # Get response using the mode-specific system prompt
-    response = ell.chat(
-        messages=[message],
-        system=system_prompt,
-        model=MODEL,
-        client=client,
-        temperature=0.1,
-    )
-
-    return [response]
+    return [
+        ell.system(system_prompt),
+        ell.user(prompt),
+    ]
 
 
-def display_response(response: str, mode: str = "chat"):
+def display_response(response: str, mode: str = "chat") -> None:
     """
     Enhance terminal output with rich formatting.
     Different modes get different visual styles to help distinguish types of responses.
@@ -300,11 +247,7 @@ def display_response(response: str, mode: str = "chat"):
     # Get style configuration for the current mode
     style = styles.get(mode, styles["chat"])
 
-    # Convert markdown for modes that benefit from markdown rendering
-    if mode in ["summary", "deep", "explain"]:
-        content = Markdown(response)
-    else:
-        content = response
+    content = Markdown(response)
 
     # Display the panel with mode-specific styling
     rprint(
@@ -317,14 +260,15 @@ def display_response(response: str, mode: str = "chat"):
     )
 
 
+# note: maybe be useful in the future, when introducing section-based chunking
 class ReadingProgress:
-    def __init__(self, paper_content: str):
+    def __init__(self, paper_content: str) -> None:
         self.sections = self._extract_sections(paper_content)
         self.progress = {section: 0 for section in self.sections}
         self.notes = {section: [] for section in self.sections}
 
     def _extract_sections(self, content: str) -> list[str]:
-        """Extract section headers from markdown content"""
+        """Extract section headers from markdown content."""
         sections = []
         for line in content.split("\n"):
             if line.startswith("##") and not line.startswith("###"):
@@ -333,16 +277,16 @@ class ReadingProgress:
                 sections.append(section)
         return sections if sections else ["Main Content"]
 
-    def update_progress(self, section: str, status: int):
-        """Update reading progress (0-100%) for a section"""
+    def update_progress(self, section: str, status: int) -> None:
+        """Update reading progress (0-100%) for a section."""
         self.progress[section] = status
 
-    def add_note(self, section: str, note: str):
-        """Add a note to a specific section"""
+    def add_note(self, section: str, note: str) -> None:
+        """Add a note to a specific section."""
         self.notes[section].append(note)
 
     def get_summary(self) -> str:
-        """Get reading progress summary"""
+        """Get reading progress summary."""
         summary = "## Reading Progress\n\n"
         for section, progress in self.progress.items():
             summary += f"- {section}: {progress}% complete\n"
@@ -350,7 +294,7 @@ class ReadingProgress:
 
 
 def export_to_obsidian(notes: dict, filename: str):
-    """Export notes to Obsidian-compatible format"""
+    """Export notes to Obsidian-compatible format."""
     obsidian_content = "---\n"
     obsidian_content += f"title: {filename}\n"
     obsidian_content += f"date: {datetime.now().strftime('%Y-%m-%d')}\n"
@@ -372,13 +316,11 @@ if __name__ == "__main__":
 
     # Read and enhance paper content
     paper_content = read_markdown_file(input_file)
-    enhanced_content = enhance_paper_content(paper_content)
     original_content = (
         read_markdown_file(output_file) if os.path.exists(output_file) else ""
     )
 
     # Initialize reading progress
-    progress = ReadingProgress(enhanced_content)
     message_history = []
 
     # Display initial summary
@@ -386,8 +328,8 @@ if __name__ == "__main__":
         "Welcome! I'll help you read this paper. Here's a quick summary:",
         "chat",
     )
-    response = paper_chat_mode("summary", [], enhanced_content)
-    display_response(response[0].text, "summary")
+    response = paper_chat_mode("summary", [], paper_content)
+    display_response(response.text, "summary")
     message_history.extend(response)
 
     while True:
@@ -407,9 +349,9 @@ if __name__ == "__main__":
                 print("-" * 79)
                 print(f"Thinking... (Mode: {mode})")
                 response = paper_chat_mode(
-                    mode, message_history, enhanced_content
+                    mode, message_history, paper_content
                 )
-                display_response(response[0].text, mode)
+                display_response(response.text, mode)
                 message_history.extend(response)
                 continue
 
@@ -417,9 +359,9 @@ if __name__ == "__main__":
         message_history.append(ell.user(user_input))
         print("-" * 79)
         print("Thinking...")
-        response = academic_chat_bot(message_history, enhanced_content)
+        response = academic_chat_bot(message_history, paper_content)
         display_response(response.text)
-        message_history.append(response)
+        message_history.extend(response)
 
     print("-" * 79)
     user_input = input("Save conversation? (y/N): ")
@@ -431,14 +373,6 @@ if __name__ == "__main__":
         with open(output_file, "w", encoding="utf-8") as file:
             file.write(response.text)
 
-        obsidian_file = output_file.replace(".md", "_obsidian.md")
-        obsidian_content = export_to_obsidian(
-            progress.notes, os.path.basename(input_file)
-        )
-        with open(obsidian_file, "w", encoding="utf-8") as file:
-            file.write(obsidian_content)
-
         print("Conversation saved to", output_file)
-        print("Obsidian notes saved to", obsidian_file)
 
     print("Exiting...")
