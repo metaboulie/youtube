@@ -11,8 +11,8 @@ AI-powered academic paper analysis tool.
 
 ## Usage
 
-Each project folder contains its own setup and running instructions. Refer to
-the individual project READMEs for more details.
+Each project folder contains its own setup and running instructions. Refer to the
+individual project READMEs for more details.
 
 ## License
 
