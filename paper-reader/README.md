@@ -1,5 +1,9 @@
 # The very first dream paper reader
 
+![Paper Reader Interface](./assets/paper_reader.png) _Paper Reader: An AI-powered
+academic paper analysis tool that transforms PDFs into interactive markdown and enables
+intelligent paper discussions using local LLMs_
+
 [Watch the video 🤓](https://www.youtube.com/watch?v=qZzK-2GQq7k)
 
 ## Setup
