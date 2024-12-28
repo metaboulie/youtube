@@ -1,10 +1,11 @@
+"""Basic usage of ell-ai."""
+
 import random
 
 import ell
 from openai import OpenAI
 
-# use llama3.2:1b model
-MODEL = "llama3.2"
+MODEL = "qwen2.5:0.5b"
 
 # use ollama server
 client = OpenAI(
@@ -17,10 +18,8 @@ ell.config.verbose = True
 # register the model
 ell.config.register_model(MODEL, client)
 
-# ell.init(store="./logdir", autocommit=True, verbose=True)
 
-
-def get_random_adjective():
+def get_random_adjective() -> str:
     """Returns a random adjective."""
     adjectives = [
         "enthusiastic",
@@ -33,7 +32,7 @@ def get_random_adjective():
     return random.choice(adjectives)
 
 
-def get_random_greeting():
+def get_random_greeting() -> str:
     """Returns a random greeting."""
     greetings = [
         "Good night",
@@ -48,7 +47,7 @@ def get_random_greeting():
 
 # let model introduce itself and greet the user with random adjective and greeting
 @ell.simple(model=MODEL, client=client)
-def greet(name: str):
+def greet(name: str) -> str:
     """You are a helpful and expressive assistant."""  # system prompt
     adjective = get_random_adjective()
     greeting = get_random_greeting()

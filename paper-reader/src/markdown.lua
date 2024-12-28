@@ -1,10 +1,11 @@
 return {
+	-- https://github.com/MeanderingProgrammer/render-markdown.nvim
 	"MeanderingProgrammer/render-markdown.nvim",
 	opts = {},
 	dependencies = { "nvim-treesitter/nvim-treesitter", "echasnovski/mini.nvim" }, -- if you use the mini.nvim suite
 	config = function()
 		require("render-markdown").setup({
-			bullet = { right_pad = -1 },
+			bullet = { right_pad = 1 },
 			callout = {
 				note = { raw = "[!NOTE]", rendered = "󰋽 Note", highlight = "RenderMarkdownInfo" },
 				tip = { raw = "[!TIP]", rendered = "󰌶 Tip", highlight = "RenderMarkdownSuccess" },
@@ -37,6 +38,7 @@ return {
 				design = { raw = "[!DESIGN]", rendered = "󰉹 Desgin", highlight = "RenderMarkdownInfo" },
 				suggestion = { raw = "[!SUGGESTION]", rendered = "󰉹 Suggestion", highlight = "RenderMarkdownHint" },
 				feedback = { raw = "[!FEEDBACK]", rendered = "󰉹 Feedback", highlight = "RenderMarkdownInfo" },
+				just = { raw = "[!JUST]", rendered = "󰳦 Just", highlight = "RenderMarkdownError" },
 			},
 			checkbox = {
 				unchecked = { icon = "✘ " },
@@ -50,14 +52,16 @@ return {
 				},
 			},
 			code = { enabled = false },
-			dash = { icon = "=" },
+			dash = { icon = "-" },
 			heading = {
+				enabled = false,
 				position = "inline",
 				icons = { "󰼏 ", "󰎨 " },
-				border = true,
+				border = false,
 				border_virtual = true,
 			},
-			pipe_table = { enabled = false },
+			pipe_table = { enabled = true },
+			link = { enabled = false },
 		})
 	end,
 }

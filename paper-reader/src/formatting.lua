@@ -1,4 +1,5 @@
 return {
+	-- https://github.com/stevearc/conform.nvim
 	"stevearc/conform.nvim",
 	event = { "BufReadPre", "BufNewFile", "BufWritePre" },
 	config = function()
@@ -8,8 +9,6 @@ return {
 			formatters_by_ft = {
 				javascript = { "prettier" },
 				typescript = { "prettier" },
-				javascriptreact = { "prettier" },
-				typescriptreact = { "prettier" },
 				svelte = { "prettier" },
 				css = { "prettier" },
 				html = { "prettier" },
@@ -20,6 +19,9 @@ return {
 				liquid = { "prettier" },
 				lua = { "stylua" },
 				python = { "ruff" },
+				rust = { "rustfmt" },
+				toml = { "taplo" },
+				haskell = { "fourmolu" },
 			},
 			format_on_save = {
 				lsp_fallback = true,

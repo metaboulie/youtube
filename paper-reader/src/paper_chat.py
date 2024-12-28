@@ -1,6 +1,7 @@
+"""Chat with paper."""
+
 import argparse
-import os
-from datetime import datetime
+from pathlib import Path
 
 import ell
 from ell import Message
@@ -16,7 +17,8 @@ client = OpenAI(
     api_key="ollama",
 )
 
-# ell.config.verbose = True
+# we are passing the paper and chat history as context
+ell.config.verbose = False
 
 ell.config.register_model(MODEL, client)
 
@@ -85,6 +87,10 @@ def organize_conversation_bot(
     return f"Original notes:\n{original_content}\n\nConversation history:\n{message_history}"
 
 
+class FileReadError(Exception):
+    """Custom exception for file reading errors."""
+
+
 def read_markdown_file(file_path: str) -> str:
     """
     Reads the content of a markdown file and returns it as a string.
@@ -97,17 +103,18 @@ def read_markdown_file(file_path: str) -> str:
 
     """
     try:
-        with open(file_path, encoding="utf-8") as file:
+        with Path(file_path).open(encoding="utf-8") as file:
             return file.read()
     except FileNotFoundError:
         msg = f"The file at {file_path} does not exist."
-        raise FileNotFoundError(msg)
+        raise FileNotFoundError(msg) from None
     except Exception as e:
         msg = f"An error occurred while reading the file: {e}"
-        raise Exception(msg)
+        raise FileReadError(msg) from e
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
+    """Parse command line args."""
     parser = argparse.ArgumentParser(description="Process some files.")
     parser.add_argument(
         "input_file", type=str, help="Path to the input markdown file."
@@ -259,55 +266,6 @@ def display_response(response: str, mode: str = "chat") -> None:
     )
 
 
-# note: maybe be useful in the future, when introducing section-based chunking
-class ReadingProgress:
-    def __init__(self, paper_content: str) -> None:
-        self.sections = self._extract_sections(paper_content)
-        self.progress = {section: 0 for section in self.sections}
-        self.notes = {section: [] for section in self.sections}
-
-    def _extract_sections(self, content: str) -> list[str]:
-        """Extract section headers from markdown content."""
-        sections = []
-        for line in content.split("\n"):
-            if line.startswith("##") and not line.startswith("###"):
-                # Extract section name without ## and whitespace
-                section = line.replace("#", "").strip()
-                sections.append(section)
-        return sections if sections else ["Main Content"]
-
-    def update_progress(self, section: str, status: int) -> None:
-        """Update reading progress (0-100%) for a section."""
-        self.progress[section] = status
-
-    def add_note(self, section: str, note: str) -> None:
-        """Add a note to a specific section."""
-        self.notes[section].append(note)
-
-    def get_summary(self) -> str:
-        """Get reading progress summary."""
-        summary = "## Reading Progress\n\n"
-        for section, progress in self.progress.items():
-            summary += f"- {section}: {progress}% complete\n"
-        return summary
-
-
-def export_to_obsidian(notes: dict, filename: str):
-    """Export notes to Obsidian-compatible format."""
-    obsidian_content = "---\n"
-    obsidian_content += f"title: {filename}\n"
-    obsidian_content += f"date: {datetime.now().strftime('%Y-%m-%d')}\n"
-    obsidian_content += "tags: [research, papers]\n"
-    obsidian_content += "---\n\n"
-
-    for section, section_notes in notes.items():
-        obsidian_content += f"## {section}\n\n"
-        for note in section_notes:
-            obsidian_content += f"- {note}\n"
-
-    return obsidian_content
-
-
 if __name__ == "__main__":
     args = parse_args()
     input_file = args.input_file
@@ -316,7 +274,7 @@ if __name__ == "__main__":
     # Read and enhance paper content
     paper_content = read_markdown_file(input_file)
     original_content = (
-        read_markdown_file(output_file) if os.path.exists(output_file) else ""
+        read_markdown_file(output_file) if Path(output_file).exists() else ""
     )
 
     # Initialize reading progress
@@ -333,7 +291,9 @@ if __name__ == "__main__":
 
     while True:
         print("-" * 79)
-        print("Available modes: summary, deep, critique, connect, explain")
+        print(
+            "Available modes: /summary, /deep, /critique, /connect, /explain"
+        )
         user_input = input("You: (type 'exit' to quit) ")
 
         if user_input.lower() == "exit":
@@ -369,7 +329,7 @@ if __name__ == "__main__":
         response = organize_conversation_bot(message_history, original_content)
 
         # Export to both markdown and Obsidian formats
-        with open(output_file, "w", encoding="utf-8") as file:
+        with Path(output_file).open("w") as file:
             file.write(response.text)
 
         print("Conversation saved to", output_file)
