@@ -9,8 +9,7 @@ from rich import print as rprint
 from rich.markdown import Markdown
 from rich.panel import Panel
 
-# MODEL = "llama3.2"
-MODEL = "llama3.2:1b"
+MODEL = "qwen2.5:0.5b"
 
 client = OpenAI(
     base_url="http://localhost:11434/v1",
