@@ -5,10 +5,6 @@ This repository contains source code for YouTube videos created for the
 
 ## Projects
 
-### deepboredom-intro
-
-Introductory video content and animations.
-
 ### paper-reader
 
 AI-powered academic paper analysis tool.
