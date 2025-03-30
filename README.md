@@ -15,7 +15,3 @@ and enables intelligent paper discussions using local LLMs_
 
 Each project folder contains its own setup and running instructions. Refer to the
 individual project READMEs for more details.
-
-## License
-
-[MIT License](LICENSE)
